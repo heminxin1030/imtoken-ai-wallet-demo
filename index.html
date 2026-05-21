@@ -43,6 +43,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .56;
+    }
+
     .app {
       min-height: 100vh;
       display: grid;
@@ -310,6 +315,108 @@
     .assets {
       display: grid;
       gap: 10px;
+    }
+
+    .wallet-tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .tx-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #fbfdfe;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 260px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #f7fafc;
+    }
+
+    .segmented button {
+      padding: 9px 12px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .segmented button.active {
+      color: #fff;
+      background: var(--deep);
+    }
+
+    .mnemonic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .word {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfdfe;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .word span {
+      color: var(--muted);
+      font-family: inherit;
+    }
+
+    .secure-box {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      border: 1px dashed #e7b24b;
+      border-radius: var(--radius);
+      background: #fff9eb;
+    }
+
+    .secure-box strong {
+      color: #6b4700;
+    }
+
+    .keystore-output {
+      min-height: 112px;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
     .asset {
@@ -629,7 +736,7 @@
         margin-top: 0;
       }
 
-      .grid, .workflow, .submit-grid {
+      .grid, .workflow, .submit-grid, .wallet-tools, .tx-grid {
         grid-template-columns: 1fr;
       }
 
@@ -664,6 +771,10 @@
       .kv {
         grid-template-columns: 1fr;
         gap: 4px;
+      }
+
+      .mnemonic-grid {
+        grid-template-columns: 1fr 1fr;
       }
     }
   </style>
@@ -715,18 +826,18 @@
           <div class="panel-body">
             <div class="address-row">
               <div>
-                <small>隔离演示账户</small>
-                <div class="mono" id="address">0x7B58...A1c9</div>
+                <small>本地演示账户</small>
+                <div class="mono" id="address">尚未创建钱包</div>
               </div>
               <button class="btn ghost" id="newWallet">
                 <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-                新建演示钱包
+                创建钱包
               </button>
             </div>
             <div class="balance">
-              <small>Portfolio Value</small>
-              <strong id="portfolio">$8,426.20</strong>
-              <span>Ethereum Sepolia / Bitcoin test / Polygon Amoy</span>
+              <small>Demo Portfolio Value</small>
+              <strong id="portfolio">$0.00</strong>
+              <span id="walletStatus">点击创建钱包后，本页会在浏览器本地生成助记词与地址</span>
             </div>
             <div class="actions">
               <button class="btn ghost" data-template="send">转账</button>
@@ -762,6 +873,63 @@
         </article>
       </section>
 
+      <section class="panel">
+        <div class="panel-head">
+          <h2>基础钱包创建</h2>
+          <span class="muted" id="walletMode">BIP39 / Ethereum</span>
+        </div>
+        <div class="panel-body wallet-tools">
+          <div class="form-grid">
+            <div class="secure-box">
+              <strong>测试安全提示</strong>
+              <span class="muted">此处会输出真实格式的助记词，用于活动演示和测试网。不要把页面生成的助记词用于主网资产，也不要把真实钱包助记词粘贴到公开 Demo。</span>
+            </div>
+            <div class="field">
+              <label>助记词长度</label>
+              <div class="segmented" aria-label="助记词长度">
+                <button class="active" data-words="12" type="button">12 词</button>
+                <button data-words="24" type="button">24 词</button>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn" id="createWallet" type="button">生成新钱包</button>
+              <button class="btn secondary" id="toggleMnemonic" type="button" disabled>显示助记词</button>
+              <button class="btn secondary" id="copyMnemonic" type="button" disabled>复制助记词</button>
+            </div>
+            <div class="mnemonic-grid" id="mnemonicGrid" aria-label="助记词">
+              <div class="word"><span>1</span>••••••</div>
+              <div class="word"><span>2</span>••••••</div>
+              <div class="word"><span>3</span>••••••</div>
+              <div class="word"><span>4</span>••••••</div>
+              <div class="word"><span>5</span>••••••</div>
+              <div class="word"><span>6</span>••••••</div>
+            </div>
+            <div class="kv"><b>派生路径</b><span class="mono" id="derivationPath">m/44'/60'/0'/0/0</span></div>
+            <div class="kv"><b>地址</b><span class="mono" id="fullAddress">等待创建</span></div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="importPhrase">从助记词导入测试钱包</label>
+              <textarea id="importPhrase" aria-label="从助记词导入测试钱包" placeholder="输入 12 或 24 个英文助记词，仅用于本地演示"></textarea>
+            </div>
+            <div class="actions">
+              <button class="btn secondary" id="importWallet" type="button">导入并校验</button>
+              <button class="btn secondary" id="clearWallet" type="button">清空内存钱包</button>
+            </div>
+            <div class="field">
+              <label for="keystorePassword">Keystore 密码</label>
+              <input id="keystorePassword" type="password" autocomplete="new-password" placeholder="输入测试密码生成加密 Keystore">
+            </div>
+            <div class="actions">
+              <button class="btn" id="makeKeystore" type="button" disabled>生成 Keystore JSON</button>
+              <button class="btn secondary" id="copyKeystore" type="button" disabled>复制 Keystore</button>
+            </div>
+            <textarea class="keystore-output" id="keystoreOutput" readonly aria-label="Keystore JSON 输出" placeholder="Keystore JSON 将显示在这里"></textarea>
+          </div>
+        </div>
+      </section>
+
       <section class="grid" id="intent">
         <article class="panel">
           <div class="panel-head">
@@ -774,6 +942,16 @@
               <button class="chip" data-template="send">给朋友转一笔测试 ETH</button>
               <button class="chip" data-template="swap">把 40 USDC 换成 ETH</button>
               <button class="chip" data-template="revoke">检查并撤销高风险授权</button>
+            </div>
+            <div class="tx-grid">
+              <div class="field">
+                <label for="recipient">收款地址 / ENS</label>
+                <input id="recipient" value="0x92b7a0F1914F25eE9D3f1E8B6249A67144f218f4">
+              </div>
+              <div class="field">
+                <label for="amount">金额</label>
+                <input id="amount" value="0.08 ETH">
+              </div>
             </div>
             <button class="btn" id="parseIntent">
               <svg viewBox="0 0 24 24"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
@@ -793,6 +971,7 @@
             <div class="kv"><b>收款方</b><span class="mono" id="draftTo">alex.demo.eth / 0x92b7...18f4</span></div>
             <div class="kv"><b>网络</b><span id="draftChain">Ethereum Sepolia</span></div>
             <div class="kv"><b>预计费用</b><span id="draftFee">0.00042 ETH</span></div>
+            <div class="kv"><b>签名输出</b><span class="mono" id="signatureOutput">创建钱包后可模拟签名</span></div>
             <div class="actions">
               <button class="btn" id="approve">确认模拟签名</button>
               <button class="btn secondary" id="reject">拒绝</button>
@@ -834,7 +1013,7 @@
               地址已通过演示白名单；交易金额低于单笔限制；未请求无限授权；AI 输出不可直接签名，必须经过用户确认。
             </div>
             <div class="callout danger">
-              真实钱包版本应把助记词与私钥留在 Token Core / 设备安全区内，本网页 Demo 不要求任何真实密钥输入。
+              本网页可在浏览器本地生成测试助记词和 Keystore，用于展示钱包创建流程；真实资产钱包仍应把助记词与私钥留在 Token Core / 设备安全区内。
             </div>
           </div>
         </article>
@@ -849,7 +1028,7 @@
           <div class="step"><b>1. 解析意图</b><p>用户用一句话描述收款、兑换、授权管理等目标，AI 输出结构化草稿。</p></div>
           <div class="step"><b>2. 风险拦截</b><p>检查地址、金额、网络、授权范围、钓鱼关键字和异常手续费。</p></div>
           <div class="step"><b>3. 清晰确认</b><p>把最终交易内容翻译成用户能理解的语言，而不是只展示哈希和十六进制。</p></div>
-          <div class="step"><b>4. 本地签名</b><p>真实产品中由 Token Core 类本地钱包核心管理 Keystore 与签名，不把私钥交给 AI。</p></div>
+          <div class="step"><b>4. 本地签名</b><p>Demo 可用生成的钱包做消息签名；真实产品中由 Token Core 类本地钱包核心管理 Keystore 与交易签名。</p></div>
         </div>
       </section>
 
@@ -860,8 +1039,8 @@
         </div>
         <div class="panel-body submit-grid">
           <button class="copy" data-copy="Intent Guardian Wallet"><b>作品名称</b><br>Intent Guardian Wallet</button>
-          <button class="copy" data-copy="一个安全优先的 AI 意图钱包 Demo：用户用自然语言描述转账、兑换或授权管理目标，AI 生成草稿；系统在签名前展示资产、地址、网络、手续费和风险解释；最终由用户确认后才进入本地签名边界。"><b>简介</b><br>AI 意图 + 清晰签名 + 用户掌控的钱包原型。</button>
-          <button class="copy" data-copy="使用 Token Core 相关材料中的本地 Keystore、私钥不出设备、多链账户与签名确认思路；本 Demo 用隔离演示钱包复现交互，不收集真实助记词或私钥。"><b>Token Core 关联</b><br>本地密钥边界、Keystore、签名前确认、多链资产管理。</button>
+          <button class="copy" data-copy="一个安全优先的 AI 意图钱包 Demo：支持浏览器本地创建测试钱包、输出助记词、生成地址和 Keystore；用户用自然语言描述转账或授权管理目标，AI 生成草稿；系统在签名前展示资产、地址、网络、手续费和风险解释，最终由用户确认后模拟签名。"><b>简介</b><br>钱包创建 + AI 意图 + 清晰签名。</button>
+          <button class="copy" data-copy="使用 Token Core 相关材料中的本地 Keystore、私钥不出设备、多链账户与签名确认思路；本 Demo 在浏览器本地生成测试助记词、地址和 Keystore，不上传密钥材料，真实产品形态应由 Token Core 类钱包核心完成密钥生成、Keystore 加密和签名。"><b>Token Core 关联</b><br>本地密钥边界、Keystore、签名前确认、多链资产管理。</button>
         </div>
       </section>
     </main>
@@ -869,6 +1048,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
   <script>
     const templates = {
       send: "帮我给 Alex 转 0.08 ETH，用 Sepolia，备注是 imToken 十周年活动演示。先检查地址风险和预计手续费。",
@@ -879,6 +1059,12 @@
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+    let activeWallet = null;
+    let activeMnemonic = "";
+    let mnemonicVisible = false;
+    let wordCount = 12;
+    let activeDraft = null;
+    let activeKeystore = "";
 
     function toast(message) {
       const el = $("#toast");
@@ -887,18 +1073,134 @@
       window.setTimeout(() => el.classList.remove("show"), 2100);
     }
 
-    async function digestAddress() {
-      const bytes = new Uint8Array(20);
+    function requireEthers() {
+      if (!window.ethers) {
+        toast("钱包库加载失败，请刷新页面后重试");
+        throw new Error("ethers unavailable");
+      }
+      return window.ethers;
+    }
+
+    function shortAddress(address) {
+      return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    }
+
+    function pseudoBalance(address) {
+      const seed = parseInt(address.slice(2, 10), 16);
+      return 1200 + (seed % 820000) / 100;
+    }
+
+    function renderMnemonic() {
+      const words = activeMnemonic ? activeMnemonic.split(" ") : [];
+      const displayWords = words.length ? words : Array.from({ length: wordCount }, () => "••••••");
+      $("#mnemonicGrid").innerHTML = displayWords.map((word, index) => {
+        const text = activeMnemonic && mnemonicVisible ? word : "••••••";
+        return `<div class="word"><span>${index + 1}</span>${text}</div>`;
+      }).join("");
+    }
+
+    function setWallet(wallet, phrase) {
+      activeWallet = wallet;
+      activeMnemonic = phrase;
+      mnemonicVisible = false;
+      activeKeystore = "";
+      $("#keystoreOutput").value = "";
+      $("#address").textContent = shortAddress(wallet.address);
+      $("#fullAddress").textContent = wallet.address;
+      $("#walletStatus").textContent = "钱包已在浏览器内存中创建，刷新页面后会清空";
+      $("#walletMode").textContent = `${phrase.split(" ").length} 词助记词 / Ethereum`;
+      $("#portfolio").textContent = `$${pseudoBalance(wallet.address).toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+      $("#toggleMnemonic").disabled = false;
+      $("#copyMnemonic").disabled = false;
+      $("#makeKeystore").disabled = false;
+      $("#copyKeystore").disabled = true;
+      $("#signatureOutput").textContent = "可点击确认模拟签名";
+      renderMnemonic();
+    }
+
+    function entropyBytes(length) {
+      const bytes = new Uint8Array(length);
       crypto.getRandomValues(bytes);
-      const full = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
-      $("#address").textContent = `0x${full.slice(0, 6)}...${full.slice(-4)}`;
-      const value = 6200 + Math.random() * 4200;
-      $("#portfolio").textContent = `$${value.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
-      toast("已生成新的隔离演示钱包");
+      return bytes;
+    }
+
+    async function createWallet() {
+      const ethersLib = requireEthers();
+      const entropy = entropyBytes(wordCount === 24 ? 32 : 16);
+      const phrase = ethersLib.Mnemonic.entropyToPhrase(entropy);
+      const wallet = ethersLib.Wallet.fromPhrase(phrase);
+      setWallet(wallet, phrase);
+      toast("已在本地生成测试钱包和助记词");
+    }
+
+    async function importWallet() {
+      const ethersLib = requireEthers();
+      const phrase = $("#importPhrase").value.trim().toLowerCase().replace(/\s+/g, " ");
+      if (!phrase) {
+        toast("请先输入助记词");
+        return;
+      }
+      if (!ethersLib.Mnemonic.isValidMnemonic(phrase)) {
+        toast("助记词校验失败，请检查单词和顺序");
+        return;
+      }
+      setWallet(ethersLib.Wallet.fromPhrase(phrase), phrase);
+      toast("已从助记词导入测试钱包");
+    }
+
+    function clearWallet() {
+      activeWallet = null;
+      activeMnemonic = "";
+      activeKeystore = "";
+      mnemonicVisible = false;
+      $("#address").textContent = "尚未创建钱包";
+      $("#fullAddress").textContent = "等待创建";
+      $("#portfolio").textContent = "$0.00";
+      $("#walletStatus").textContent = "点击创建钱包后，本页会在浏览器本地生成助记词与地址";
+      $("#walletMode").textContent = "BIP39 / Ethereum";
+      $("#keystoreOutput").value = "";
+      $("#importPhrase").value = "";
+      $("#keystorePassword").value = "";
+      $("#toggleMnemonic").disabled = true;
+      $("#copyMnemonic").disabled = true;
+      $("#makeKeystore").disabled = true;
+      $("#copyKeystore").disabled = true;
+      $("#signatureOutput").textContent = "创建钱包后可模拟签名";
+      renderMnemonic();
+      toast("内存钱包已清空");
+    }
+
+    async function makeKeystore() {
+      if (!activeWallet) {
+        toast("请先创建或导入钱包");
+        return;
+      }
+      const password = $("#keystorePassword").value;
+      if (password.length < 6) {
+        toast("测试密码至少 6 位");
+        return;
+      }
+      $("#keystoreOutput").value = "正在生成加密 Keystore...";
+      activeKeystore = await activeWallet.encrypt(password);
+      $("#keystoreOutput").value = activeKeystore;
+      $("#copyKeystore").disabled = false;
+      toast("Keystore JSON 已生成");
     }
 
     function setTemplate(key) {
       $("#intentInput").value = templates[key] || templates.send;
+      if (key === "send") {
+        $("#recipient").value = "0x92b7a0F1914F25eE9D3f1E8B6249A67144f218f4";
+        $("#amount").value = "0.08 ETH";
+      }
+      if (key === "swap") {
+        $("#recipient").value = "verified-router.demo";
+        $("#amount").value = "40 USDC";
+      }
+      if (key === "revoke") {
+        $("#recipient").value = "0xa4410000000000000000000000000000000090ce";
+        $("#amount").value = "2 个授权";
+      }
       $("#intent").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
@@ -907,19 +1209,21 @@
       const isSwap = text.includes("swap") || text.includes("兑换") || text.includes("换");
       const isRevoke = text.includes("撤销") || text.includes("授权");
       const isSafe = text.includes("安全检查");
+      const recipient = $("#recipient").value.trim() || "alex.demo.eth / 0x92b7...18f4";
+      const amount = $("#amount").value.trim() || "0.08 ETH";
 
       if (isRevoke) {
         $("#draftAction").textContent = "撤销授权";
-        $("#draftAmount").textContent = "2 个高风险授权";
-        $("#draftTo").textContent = "unverified-spender.eth / 0xa441...90ce";
+        $("#draftAmount").textContent = amount;
+        $("#draftTo").textContent = recipient;
         $("#draftChain").textContent = "Ethereum / Polygon";
         $("#draftFee").textContent = "预计 0.0011 ETH + 0.04 POL";
         $("#riskLabel").textContent = "中风险";
         $("#riskMeter").style.width = "58%";
       } else if (isSwap) {
         $("#draftAction").textContent = "兑换";
-        $("#draftAmount").textContent = "40 USDC -> 约 0.018 ETH";
-        $("#draftTo").textContent = "verified-router.demo / 0x71c9...2240";
+        $("#draftAmount").textContent = `${amount} -> 约 0.018 ETH`;
+        $("#draftTo").textContent = recipient;
         $("#draftChain").textContent = "Ethereum Sepolia";
         $("#draftFee").textContent = "0.00087 ETH";
         $("#riskLabel").textContent = "低到中风险";
@@ -934,8 +1238,8 @@
         $("#riskMeter").style.width = "22%";
       } else {
         $("#draftAction").textContent = "转账";
-        $("#draftAmount").textContent = "0.08 ETH";
-        $("#draftTo").textContent = "alex.demo.eth / 0x92b7...18f4";
+        $("#draftAmount").textContent = amount;
+        $("#draftTo").textContent = recipient;
         $("#draftChain").textContent = "Ethereum Sepolia";
         $("#draftFee").textContent = "0.00042 ETH";
         $("#riskLabel").textContent = "低风险";
@@ -943,6 +1247,15 @@
       }
 
       $("#draftState").textContent = "已生成";
+      $("#signatureOutput").textContent = activeWallet ? "等待用户确认签名" : "未创建钱包，仅生成草稿";
+      activeDraft = {
+        action: $("#draftAction").textContent,
+        amount: $("#draftAmount").textContent,
+        to: $("#draftTo").textContent,
+        chain: $("#draftChain").textContent,
+        fee: $("#draftFee").textContent,
+        from: activeWallet ? activeWallet.address : "no-wallet"
+      };
       toast("AI 草稿已生成，等待用户确认");
     }
 
@@ -965,16 +1278,56 @@
       });
     });
 
+    $$(".segmented button").forEach(button => {
+      button.addEventListener("click", () => {
+        $$(".segmented button").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        wordCount = Number(button.dataset.words);
+        if (!activeMnemonic) renderMnemonic();
+      });
+    });
+
     $("#parseIntent").addEventListener("click", parseIntent);
-    $("#newWallet").addEventListener("click", digestAddress);
-    $("#approve").addEventListener("click", () => {
+    $("#newWallet").addEventListener("click", createWallet);
+    $("#createWallet").addEventListener("click", createWallet);
+    $("#importWallet").addEventListener("click", importWallet);
+    $("#clearWallet").addEventListener("click", clearWallet);
+    $("#toggleMnemonic").addEventListener("click", () => {
+      mnemonicVisible = !mnemonicVisible;
+      $("#toggleMnemonic").textContent = mnemonicVisible ? "隐藏助记词" : "显示助记词";
+      renderMnemonic();
+    });
+    $("#copyMnemonic").addEventListener("click", async () => {
+      if (!activeMnemonic) return;
+      await navigator.clipboard.writeText(activeMnemonic);
+      toast("已复制测试助记词，请勿用于主网资产");
+    });
+    $("#makeKeystore").addEventListener("click", makeKeystore);
+    $("#copyKeystore").addEventListener("click", async () => {
+      if (!activeKeystore) return;
+      await navigator.clipboard.writeText(activeKeystore);
+      toast("已复制 Keystore JSON");
+    });
+    $("#approve").addEventListener("click", async () => {
+      if (!activeDraft) parseIntent();
+      if (!activeWallet) {
+        $("#draftState").textContent = "已确认草稿";
+        $("#signatureOutput").textContent = "请先创建钱包，才能生成签名";
+        toast("请先创建或导入钱包");
+        return;
+      }
+      const message = JSON.stringify({ ...activeDraft, approvedAt: new Date().toISOString() });
+      const signature = await activeWallet.signMessage(message);
       $("#draftState").textContent = "已模拟签名";
-      toast("模拟签名完成：真实产品会在本地钱包核心中执行");
+      $("#signatureOutput").textContent = `${signature.slice(0, 18)}...${signature.slice(-14)}`;
+      toast("已用本地测试钱包完成消息签名");
     });
     $("#reject").addEventListener("click", () => {
       $("#draftState").textContent = "已拒绝";
       toast("已拒绝本次操作");
     });
+
+    renderMnemonic();
   </script>
 </body>
 </html>
